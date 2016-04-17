@@ -1,0 +1,33 @@
+model
+{
+#likelihood
+for (i in 1:n) {
+	x[i] ~ dbin(theta,1);
+	}
+#priors
+#-----opcion 1 a) Usando la información del año pasado, encuentra la distribución beta #que mejor describe el conocimiento inicial.
+#theta ~ dbeta(89.4,59.6)
+#-----opcion 2 b) Usando la información del año pasado, encuentra la distribución
+#normal transformada que mejor describa el conocimiento inicial
+#theta <- exp(lambda)/(1+exp(lambda))
+#lambda ~ dnorm(0.4054,33.33)
+#-----opcion 3 c)  Determina la distribución inicial de referencia
+#p[1] <- 0.3
+#p[2] <- 0.7
+#a <- 10/eta
+#b <- 10/eta*lam
+#theta ~ dbeta(a,b)
+#eta ~ dcat(p[])
+#lam <- 1.99-eta 
+#-----opcion 4 d) Usando los datos del año 2005 encuentra la distribución final para
+#cada una de las distribuciones iniciales de los incisos (a) – (c)
+#theta ~ dbeta(0.5,0.5)
+#-----predictiva e) Estima la tasa de créditos otorgados, usando las 3 distribuciones
+#finales del inciso (d)
+#primero necesitamos un modelo inicial(hay que escoger un inciso)
+#m<-2 #es el tamaño que quiero predecir
+#for (j in 1:2) {
+#	x1[j] ~ dbin(theta,1) #x1 es x futuro
+#	}
+#}
+#vale la pena predecir a cada xi(clientes) 

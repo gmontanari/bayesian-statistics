@@ -1,0 +1,39 @@
+#model
+#{
+#Likelihood
+#for ( i in 1:n ) {
+#	y[ i ] ~ dnorm(mu[i],tau) #cada y_i se distribuye normal mu tau
+#	mu[i]<- beta[1]+ beta[2]*x1[i]+ beta[3]*x2[i]+ beta[4]*x3[i]  
+#	}
+#
+#priors
+#for (j in 1:4) { beta[j] ~ dnorm(0,0.001) }
+#tau ~ dgamma (0.001, 0.001)
+
+#PREDICTION
+#for (i in 1:n) { yf[i] ~ dnorm (mu[i], tau)}
+#}
+
+
+model {
+    # Likelihood:
+    for( i in 1:n) {
+      y[i] ~ dnorm( mu[i] , tau )
+      mu[i]<- b0 + inprod(beta[1:m],x[i,1:m])
+    }
+    # Prior
+    tau ~ dgamma (0.001, 0.001)
+    b0 ~ dnorm( 0 , .001 ) 
+    for ( j in 1:m ) {
+      beta[j] ~ dnorm( 0 , .001 )
+    }
+
+#PREDICTION
+  
+  for (i in 1:n) { yf[i] ~ dnorm (mu[i], tau)}
+  
+  for (k in 1:m) {
+        yf2[k] ~ dnorm( muF[k] , tau) 
+        muF[k]<- b0 + inprod(beta[1:m],xF[k,1:m])
+    }
+}

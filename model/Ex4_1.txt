@@ -1,0 +1,22 @@
+model {
+    # Likelihood:
+    for( i in 1:n) {
+      y[i] ~ dnorm( mu[i] , tau )
+      mu[i]<- b0 + inprod(b[1:nPred],x[i,1:nPred])
+    }
+    # Prior
+    tau ~dgamma (0.001, 0.001)
+    b0 ~ dnorm( 0 , .001 ) 
+    for ( j in 1:nPred ) {
+      b[j] ~ dnorm( 0 , .001 )
+    }
+
+#PREDICTION
+  
+  for (i in 1:n) { yf[i] ~ dnorm (mu[i], tau)}
+  
+  for (l in 1:nF) {
+        yPred[l] ~ dnorm( muF[l] , tau) 
+        muF[l]<- b0 + inprod(b[1:nF],xF[l,1:nF])
+    }
+}

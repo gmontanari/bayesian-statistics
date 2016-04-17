@@ -1,0 +1,18 @@
+model
+{
+#likelihood
+for (i in 1:n) {
+	x[i] ~ dnorm(mu,tau);
+	}
+tau<-1/pow(sig,2)
+#priors
+#-----opcion 1 a)
+#tau0 <- 1/40 #se define a parte por que no se pueden hacer operaciones dentro
+mu ~ dnorm(200,0.025) #tau0) 
+sig ~ dgamma(10,1)
+#------opcion 2 b)
+#la inicial de referencia se busca en el paper de formulas de densidades
+#mun ~dnorm(0,0.0001) #estamos usando la normal con una precision pequeña para una #varianza grande
+#sig ~dgamma(0.001,0.001) #hacemos unos parametros pequeños
+#----prediction
+#x1 ~ dnorm(mu,tau)

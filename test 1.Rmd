@@ -1,0 +1,516 @@
+---
+title: "Examen Parcial - Modelos Lineales Generalizados"
+author: "Pedro V - CVU 159549"
+date: "27 de Octubre de 2015"
+output: html_document
+---
+
+Abstract (resumen)
+-motivacion del uso bayesiano, son apropiados para la estructura de datos, las inferencias son mas ricas y no hay dependencia de un p-valor
+-Proposito y resumen de resultados
+
+##Contexto y descripci??n del problema
+1. Introduction
+En el campo de la medicina, se llevan a cabo profundas pruebas antes de lanzar al mercado una nueva droga, ya que tienen que cumplir con legislaciones correspondientes al pa??s de origen de la empresa farmaceutica, de igual manera debe contar con los estandares publicados en las organizaciones mundiales de farmaco-medicina.
+Dichas pruebas se lleva a cabo en diferentes fases, ya que, si no supera alguna fase, se replantea el dise??o del producto.
+Las pruebas cl??nicas fase I son experimentos con personas o animales en donde el objetivo es determinar la dosis m??s alta de una droga que se le puede dar a un paciente.
+
+
+##Descripci??n de la informaci??n
+2. Caso de estudio
+???El departamento de Ciencia de Datos llevar?? a cabo el estudio estad??stico del ???requerimiento de la farmaceutica, el equipo de ensayos clinicos nos proporciona 
+Se toman la tabla de datos con los resultados de los ensayos cl??nicos, donde se considerar??n las variables m??s importantes para medir la severidad de la droga, se consideran 20 animales expuestos a 4 distintos niveles de droga, asignados de manera uniforme, es decir, cada dosis se prob?? en 5 animales
+Se llevar??n a cabo tecnicas de regresi??n con enfoque bayesiano, donde se utilizar??n distintos enfoques de modelos lineales generalizados para conseguir un buen ajuste a los datos, para de esta manera poder hacer estimaci??n de las variables respuesta
+
+
+3. An??lisis Exploratorio
+En la tabla 1 observamos los resultados del ensayo
+%aqu?? va la tabla
+En el gr??fica 1 se expone la relaci??n entre las variable de respuesta (xxxx) y las variables explicativas (xxxx), esta gr??fica muestra una relaci??n positiva/negativa entre nombre de la variables 1 y nombre de la variable de respuesta (poner la correlaci??n entre cada variable con la var. de respuesta). La correlaci??n entre las variables explicativas indica que cada una describe algo distinto de nombre de la variable de respuesta.
+Es importante considerar que 1) a trav??s de los resultados de un coeficiente de correlaci??n no se puede hablar de relaciones de causalidad. 2), un coeficiente de correlaci??n de Pearson igual a cero indica que no hay ning??n tipo de relaci??n lineal entre las variables pero quiz??s podr??a haber relaci??n no lineal.
+%aqu?? va la grafica
+```{r, echo=FALSE}
+library(rjags)
+library(R2jags)
+library(ggplot2)
+bioassay<-read.table("http://allman.rhon.itam.mx/~lnieto/index_archivos/Bioassay.txt",header=TRUE)
+```
+  Datos conocidos
+```{r}
+n<-nrow(bioassay)
+bioassay
+```
+  2) Echamos un vistazo de como lucen los datos, consideramos que se trata de conteo de datos
+```{r, echo=FALSE}
+table <- bioassay
+colnames(table)<- c("LogDosis", "Expuestos", "Muertes")
+p <- ggplot(data=table, aes(x=LogDosis, y=Muertes)) +geom_point() 
+p + geom_point(data=table, aes(y=Expuestos), colour='brown')
+```
+  Notamos que el numero de muertes de los animales en los ensayos depende de la cantidad de dosis a la que es tratado, en este punto cabe considerar que los datos de la dosis se reescalan logaritmicamente
+
+
+##Proponer modelos para analizar la informaci??n (transformaci??n de datos)
+4. Modelo y metodolog??a
+
+
+
+Los datos ser??n estudiados a trav??s de un an??lisis Bayesiano por el m??todo Gibs que permite corregir las probabilidades de partida en funci??n de la informaci??n adicional y el comportamiento de los datos de la muestra, los anterior arrojar?? probabilidades a posteriori, que ser??n utilizadas como a priori en las pr??ximas iteraciones. El proceso ser?? repetido 5000 veces, las estimaciones depender??n ??nicamente de la estimaci??n anterior.
+El modelo elegido para seguir este an??lisis fue una regresi??n lineal, que permitir?? una f??cil interpretaci??n de los datos. Para poder realizar el an??lisis bayesiano es necesario definir la funci??n de verosimilitud, una funci??n a priori ???al multiplicar estas ??ltimas se obtendr?? la funci??n a posterior del par??metro??? y una funci??n liga ???que definir?? la relaci??n entre la variable de respuesta y las variables explicativas???.
+Verosimilitud
+Por tipos de problema
+yi ~ dnorm( mui , tau )
+yi ~ dbin( thetai , tau )
+yi~ dbeta (alpha,beta)
+
+normal
+mui=bo +n=13bnxn
+
+,donde
+??????por que se usan las a prioris
+b0 ~ dnorm( 0 , .001 ) 
+bn ~ dnorm( 0 , .001 )
+Si pide comparar
+Una segunda funci??n que se considera adecuada para describir a los datos es la 
+A priori
+Por otro lado, se eligi?? una a priori no informativa/informativa ya que no/ se ten??a informaci??n valiosa sobre el comportamiento de los par??metros. 
+en el caso de las no informativas
+tau ~dgamma (0.001, 0.001)
+Liga
+Las ligas que se considerar??n para la distribuci??n nombre de la primera funci??n de verosimilitud son:
+Tomar en cuenta la siguiente tabla
+
+Las ligas que se considerar??n para la distribuci??n nombre de la segunda funci??n de verosimilitud son:
+Tomar en cuenta la siguiente tabla
+
+3) Expresamos las distribuciones de las variables aleatorias  
+  
+  De este modo:  
+$y_i | p_i,ne_i -- Bin(p_i,ne_i)$  
+Para los incisos b y c usamos la liga canonica, en este caso es la logistica, para los incisos d y e usamos la liga probit  
+$logit(p_i)  = \beta_0+\beta_1*x$  
+$p_i  = \Phi( \beta_0+\beta_1*x )$  
+  Para los parametros $\beta_i$ en los incisos b y d usamos distribuciones no informativas, o vagas es decir con varianza muy grande, $\beta_i -- N(0,0.001)$ , para los incisos c y e utilizaremos distribuciones con informacion previa, $\beta_0 -- N(-17.31,0.0009490187)$ y $\beta1 -- N(2.57,0.04302926)$ para este problema observamos anteriormente que el numero de exposiciones es fijo $ne=5$  
+
+  Expresamos el $bugs$ como funciones para R, y asi poder manipular los diferentes casos y utilizarlos en el modelo  
+  Liga Logistica
+```{r, }
+bin_model1 <- function(){
+  #Likelihood
+  for (i in 1:n) {
+    y[i] ~ dbin(p[i],ne[i])
+    logit(p[i]) <- beta0+beta1*x[i]
+  }
+  #Priors vagas
+  beta0 ~ dnorm(0,0.001)
+  beta1 ~ dnorm(0,0.001)
+  #Estimacion y_hat
+  for (i in 1:n) {
+    y_hat[i] ~ dbin(p[i],ne[i]) 
+  }
+}
+
+bin_model2 <- function(){
+  #Likelihood
+  for (i in 1:n) {
+    y[i] ~ dbin(p[i],ne[i])
+    logit(p[i]) <- beta0+beta1*x[i]
+  }
+  #Priors informativas (conocimiento previo)
+  beta0 ~ dnorm(-17.31,0.0009490187)
+  beta1 ~ dnorm(2.57,0.04302926)
+  #Estimacion y_hat
+  for (i in 1:n) {
+    y_hat[i] ~ dbin(p[i],ne[i]) 
+  }
+}
+```
+
+  Liga Probit
+```{r, }
+bin_model3 <- function(){
+  #Likelihood
+  for (i in 1:n) {
+    y[i] ~ dbin(p[i],ne[i])
+    p[i] <- phi(beta0+beta1*x[i])
+  }
+  #Priors vagas
+  beta0 ~ dnorm(0,0.001)
+  beta1 ~ dnorm(0,0.001)
+  #Estimacion y_hat
+  for (i in 1:n) {
+    y_hat[i] ~ dbin(p[i],ne[i]) 
+  }
+}
+
+bin_model4 <- function(){
+  #Likelihood
+  for (i in 1:n) {
+    y[i] ~ dbin(p[i],ne[i])
+    p[i] <- phi(beta0+beta1*x[i])
+  }
+  #Priors informativas (conocimiento previo)
+  beta0 ~ dnorm(-17.31,0.0009490187)
+  beta1 ~ dnorm(2.57,0.04302926)
+  #Estimacion y_hat
+  for (i in 1:n) {
+    y_hat[i] ~ dbin(p[i],ne[i]) 
+  }
+}
+```
+
+
+##Reporte de resultados (detalle de MCMC, diagn??stico de convergencia)
+3. Results
+3.1. Interobserver Agreement
+3.2. Treatment Outcomes
+Los resumenes de las cuantas son escritos
+Figuras y descripcion de las mismas
+3.4. ROC Curve Analysis (bondad de ajuste)
+
+Para simular probabilidades posteriores, utilizamos la funci??n jags de la paqueteria 'rjags' el cual utiliza un proceso de muestreo de gibs, para el presente experimento llevaremos a cabo corridas con los parametros previamente mencionados, 1 cadena, 50 mil iteraciones y un proceso de calentamiento de 5 mil iteraciones, en caso de querer replicar la informaci??n se utiliz?? la semilla 159549
+Tenemos los siguientes resultados
+---------opcion binomial-logit-vaga    DIC=8.54393
+#como usamos logit
+#p=exp(alpha + beta*LD50)/(1+exp(alpha + beta*LD50))
+#liga_p<-log(0.5/(1-0.5))
+#como es cero entonces
+#eta=beta0+beta1*LD50=0
+#de aqui que 
+LD50 <- -beta0/beta1
+LD50=-0.1157384
+
+#---------opcion binomial-logit-informativa   DIC=7.177881
+#como usamos logit
+#p=exp(alpha + beta*LD50)/(1+exp(alpha + beta*LD50))
+#liga_p<-log(0.5/(1-0.5))
+#como es cero entonces
+#eta=beta0+beta1*LD50=0
+#de aqui que 
+LD50 <- -beta0/beta1
+LD50=-0.09800874
+
+#---------opcion binomial-probit-vaga  DIC=6.998905
+LD50 <- -beta0/beta1
+LD50 = -0.1222256
+
+#---------opcion binomial-probit-informativa  DIC=6.862525
+LD50 <- -beta0/beta1
+LD50 -0.1120323
+
+El mejor modelo, considerando el criterio de informaci??n de la devianza (DIC).
+DIC = Dbar + pD = Dhat + 2 pD.
+El modelo con el menor DIC es el mejor modelo que mejor predice un conjunto de datos que tienen la misma estructura que los datos observados . Por lo anterior, el mejor modelo es poner el modelo con menor DIC. En este modelo se eligi?? aquel con liga poner la liga con menor DIC considerando el mismo criterio.
+
+Entre las adecuaciones del modelo binomial mostradoencontramos la opci??n binomial con liga probit y funci??n a priori informativa con respecto a los coeficientes, la cual tiene un DIC menor a los anteriores.
+
+Lo cual podemos notar tambien en las estimaciones
+          mean        sd
+y_hat[1] 0.025 0.1685331
+y_hat[2] 0.961 1.0404622
+y_hat[3] 3.077 1.2832450
+y_hat[4] 4.959 0.2671898
+
+En las siguientes graficas observamos la estabilizaci??n y convergencia de los parametros de inter??s, es claro ver que depu??s de la cuarta parte de las iteraciones, los valores arrojados por la cadena oscilan en una vecindad, esto gracias al teorema erg??dico de convergencia
+
+
+
+##Presentar estimaciones (puntuales, intervalo, significancia)
+
+
+##Interpretar resultados (dar contexto de significancia luego hablar de los estimadores -de como una variable cada que cambio una unidad de x- usar la escala original de x) usar la escala original de la droga (pastillas) basta que se reporte el modelo con e DIC menor
+
+Interpretaci??n de Coeficientes (Por tipo de liga)
+Indicadora
+mu= ??0 + ??1*x1 + ... + ??k*xk
+La interpretaci??n de los coeficientes en este caso se realiza de manera directa. ??1 indica un efecto positivo/negativo sobre poner nombre de la variable de respuesta. Si ??1 aumenta (permaneciendo todo lo dem??s constante) 1 entonces y aumenta/disminuye a poner el valor del coeficiente de ??1. Describir cada coeficiente.
+Logit 
+log(p1-p)= ??0 + ??1*x1 + ... + ??k*xk
+
+p=exp(??0 + ??1*x1 + ... + ??k*xk)1+exp(??0 + ??1*x1 + ... + ??k*xk)
+??1indica que la probabilidad aumenta/disminuye cuando aumenta la variable explicativa correspondiente, sin embargo, la cuant??a del par??metro no coincide con la magnitud de la variaci??n en la probabilidad.
+Al cociente entre la probabilidad de que ocurra un hecho, o de que se elija la opci??n 1, frente a la probabilidad de que no suceda el fen??meno, o de que se elija la opci??n 0, se la denomina como la ratio. Su interpretaci??n es la ???ventaja??? o preferencia de la opci??n 1 frente a la 0, es decir, el n??mero de veces que es m??s probable que ocurra el fen??meno frente a que no ocurra.
+log(p1-p)=Ratio
+El estimador del par??metro ??1 corresponde a la variaci??n en el t??rmino Logit, causada por una variaci??n unitaria en la variable x1 (suponiendo constantes el resto de variables explicativas). Por cada unidad que cambia x1 la raz??n de oportunidad incrementa en ??1. Describir cada coeficiente.
+Log
+??1*100 refleja un incremento porcentual de y cuando x1 aumenta en una unidad. Describir cada coeficiente.
+d[log yi ]= dxi??1 
+dyiyi = dxi??1
+100 *dyi yi = 100 * dxi??1 
+100 * ??1 = 100*dyiyi dxi  = %???yiunit ???xi  
+
+Log-log
+
+Estimaciones
+Las estimaciones obtenidas pueden ser observadas en la siguiente gr??fica
+
+
+4. Discussion
+
+5. Conclusions
+In NPC, patients with low pretreatment ADCs tended to respond better to neoadjuvant chemotherapy. Pretreatment ADCs have potential as a novel imaging marker to predict the response to neoadjuvant chemotherapy, which could facilitate individual therapeutic approaches and allow some patients with NPC to avoid ineffective chemotherapy and unnecessary treatment toxicities.
+
+References
+
+
+
+####################################
+
+  
+  3) Definimos los elementos para poder utilizar la funcion jags, expresamos los parametros a monitorear, asi como la lista de valores iniciales para las cadenas de cada uno de los parametros a simular  
+
+```{r, echo=TRUE}
+data<-list("n"=n,"ne"=bioassay$No.Animales,"y"=bioassay$No.Muertes,"x"=bioassay$LogDose)
+
+inits<-function(){list(beta0=0, beta1=0, y_hat=rep(1,n))}
+
+parameters<-c("beta0", "beta1", "y_hat")
+```
+
+  4) Corremos la funcion jags considerando 1 cadena, haciendo, 10,000 iteraciones, y un calentamiento del 20%
+  
+  -Caso 1)  Modelo Binomial, Liga logistica, Priors vagas
+```{r, echo=FALSE}  
+fit1<-jags(data,inits,parameters,
+           model.file=bin_model1,
+           n.chains=1,n.iter=100000,n.burnin=40000,
+          jags.seed = 159549) 
+```
+
+  Monitoreo de la cadena
+
+```{r, echo=FALSE}  
+out1<-fit1$BUGSoutput$sims.list
+
+b01<-out1$beta0
+b11<-out1$beta1
+dev1<-out1$deviance
+par(mfrow=c(3,3)) 
+plot(b01,type="l",col='brown')
+plot(cumsum(b01)/(1:length(b01)),type="l", ylab = 'Estabilizacion')
+acf(b01)
+plot(b11,type="l",col='brown')
+plot(cumsum(b11)/(1:length(b11)),type="l", ylab = 'Estabilizacion')
+acf(b11)
+plot(dev1,type="l",col='brown')
+plot(cumsum(dev1)/(1:length(dev1)),type="l", ylab = 'Estabilizacion') 
+acf(dev1)
+```
+  
+  Es claro ver que despues del la primera cuarta parte de las iteraciones los parametros se etabilizan, lo que convierte la probabilidad estacionaria en las distribuciones posteriores y predictivas que se desea
+  
+  Exploracion de estimaciones
+
+```{r, echo=FALSE}    
+out1.sum<-fit1$BUGSoutput$summary
+out1.sum
+out1.beta<-out1.sum[grep("beta",rownames(out1.sum)),]
+out1.y_hat<-out1.sum[grep("y_hat",rownames(out1.sum)),]
+out1.DIC<-fit1$BUGSoutput$DIC 
+out1.beta
+out1.y_hat
+out1.DIC
+beta01<- out1.beta[1,1]
+beta11<- out1.beta[2,1]
+
+```
+
+  Para este caso, como usamos liga logit el parametro se puede ver como sige:
+$p_i=\exp (\beta_0 + \beta_1 * LD50)/(1+ \exp(\beta_0 + \beta_1 *LD50))$  
+entonces necesitamos una nueva dosis para que el 50% de los animales mueran 
+por lo que 
+$liga_p=log(0.5/(1-0.5))=0$
+como es cero entonces  
+$\eta=beta0+beta1*LD50=0$  
+de aqui que la dossi a aplicar en escala logistica se ve como 
+
+```{r}  
+LD501 <- -beta01/beta11
+LD501
+```
+
+  -Caso 2)  Modelo Binomial, Liga logistica, Priors Informativas
+```{r, echo=FALSE}  
+fit2<-jags(data,inits,parameters,
+           model.file=bin_model2,
+           n.chains=1,n.iter=100000,n.burnin=40000,
+          jags.seed = 159549) 
+```
+
+  Monitoreo de la cadena
+
+```{r, echo=FALSE}  
+out2<-fit2$BUGSoutput$sims.list
+
+b02<-out2$beta0
+b12<-out2$beta1
+dev2<-out2$deviance
+par(mfrow=c(3,3)) 
+plot(b02,type="l",col='brown')
+plot(cumsum(b02)/(1:length(b02)),type="l", ylab = 'Estabilizacion')
+acf(b02)
+plot(b12,type="l",col='brown')
+plot(cumsum(b12)/(1:length(b12)),type="l", ylab = 'Estabilizacion')
+acf(b12)
+plot(dev1,type="l",col='brown')
+plot(cumsum(dev2)/(1:length(dev2)),type="l", ylab = 'Estabilizacion') 
+acf(dev2)
+```
+  
+  Es claro ver que despues del la primera cuarta parte de las iteraciones los parametros se etabilizan, lo que convierte la probabilidad estacionaria en las distribuciones posteriores y predictivas que se desea
+  
+  Exploracion de estimaciones
+
+```{r, echo=FALSE}    
+out2.sum<-fit2$BUGSoutput$summary
+out2.sum
+out2.beta<-out2.sum[grep("beta",rownames(out2.sum)),]
+out2.y_hat<-out2.sum[grep("y_hat",rownames(out2.sum)),]
+out2.DIC<-fit2$BUGSoutput$DIC 
+out2.beta
+out2.y_hat
+out2.DIC
+beta02<- out2.beta[1,1]
+beta12<- out2.beta[2,1]
+
+LD502 <- -beta02/beta12
+LD502
+```
+
+  Bondad de ajuste
+Comparando con diferentes funciones a priori, comaparamos la DIC y elegimos la de menor valor
+```{r, echo=FALSE}    
+out1.DIC #caso 1
+out2.DIC #caso 2
+```  
+
+  -Caso 3)  Modelo Binomial, Liga Probit, Priors vagas
+```{r, echo=FALSE}  
+fit3<-jags(data,inits,parameters,
+           model.file=bin_model3,
+           n.chains=1,n.iter=100000,n.burnin=40000,
+          jags.seed = 159549) 
+```
+
+  Monitoreo de la cadena
+
+```{r, echo=FALSE}  
+out3<-fit3$BUGSoutput$sims.list
+
+b03<-out3$beta0
+b13<-out3$beta1
+dev3<-out3$deviance
+par(mfrow=c(3,3)) 
+plot(b03,type="l",col='brown')
+plot(cumsum(b03)/(1:length(b03)),type="l", ylab = 'Estabilizacion')
+acf(b03)
+plot(b13,type="l",col='brown')
+plot(cumsum(b13)/(1:length(b13)),type="l", ylab = 'Estabilizacion')
+acf(b13)
+plot(dev3,type="l",col='brown')
+plot(cumsum(dev3)/(1:length(dev3)),type="l", ylab = 'Estabilizacion') 
+acf(dev3)
+```
+  
+  Exploracion de estimaciones
+
+```{r, echo=FALSE}    
+out3.sum<-fit3$BUGSoutput$summary
+out3.sum
+out3.beta<-out3.sum[grep("beta",rownames(out3.sum)),]
+out3.y_hat<-out3.sum[grep("y_hat",rownames(out3.sum)),]
+out3.DIC<-fit3$BUGSoutput$DIC 
+out3.beta
+out3.y_hat
+out3.DIC
+beta03<- out3.beta[1,1]
+beta13<- out3.beta[2,1]
+
+LD503 <- -beta03/beta13
+LD503
+```
+
+  -Caso 4)  Modelo Binomial, Liga Probit, Priors Informativas
+```{r, echo=FALSE}  
+fit4<-jags(data,inits,parameters,
+           model.file=bin_model4,
+           n.chains=1,n.iter=100000,n.burnin=40000,
+          jags.seed = 159549) 
+```
+
+  Monitoreo de la cadena
+
+```{r, echo=FALSE}  
+out4<-fit4$BUGSoutput$sims.list
+
+b04<-out4$beta0
+b14<-out4$beta1
+dev4<-out4$deviance
+par(mfrow=c(3,3)) 
+plot(b04,type="l",col='brown')
+plot(cumsum(b04)/(1:length(b04)),type="l", ylab = 'Estabilizacion')
+acf(b04)
+plot(b14,type="l",col='brown')
+plot(cumsum(b14)/(1:length(b14)),type="l", ylab = 'Estabilizacion')
+acf(b14)
+plot(dev4,type="l",col='brown')
+plot(cumsum(dev4)/(1:length(dev4)),type="l", ylab = 'Estabilizacion') 
+acf(dev4)
+```
+  
+  Exploracion de estimaciones
+
+```{r, echo=FALSE}    
+out4.sum<-fit4$BUGSoutput$summary
+out4.sum
+out4.beta<-out4.sum[grep("beta",rownames(out4.sum)),]
+out4.y_hat<-out4.sum[grep("y_hat",rownames(out4.sum)),]
+out4.DIC<-fit4$BUGSoutput$DIC 
+out4.beta
+out4.y_hat
+out4.DIC
+beta04<- out4.beta[1,1]
+beta14<- out4.beta[2,1]
+
+LD504 <- -beta04/beta14
+LD504
+```
+
+  Bondad de ajuste
+  Comparando con diferentes funciones a priori, comaparamos la DIC y elegimos la de menor valor
+```{r, echo=FALSE}    
+out3.DIC #caso 3
+out4.DIC #caso 4
+```  
+  Despues de analizar las ultimas opciones 
+
+  8) Regresion  
+
+El ultimo modelo es el que mejor informacion me da
+
+Ploteamos el ajuste del modelo del ultimo caso
+asi como el comparativo del modelo ajustado con los valores reales
+```{r, echo=FALSE}      
+
+out.yf<-out4.sum[grep("y_hat",rownames(out4.sum)),]
+or<-order(bioassay$LogDose)
+
+#ajuste del modelo
+tabla<-data.frame(bioassay$LogDose,bioassay$No.Muertes,bioassay$LogDose[or],out.yf[or,1],out.yf[or,3],out.yf[or,7])
+colnames(tabla)<- c("LogDosis", "Muertes", "Order", "Media", "lim_inf","lim_sup")
+p1 <-ggplot(data=tabla, aes(x=LogDosis,y=Muertes)) + geom_point(size=3) 
+p1 + geom_line(data=tabla, aes(x=Order, y=Media),colour='#CC6633',size=1) +
+  geom_line(data=tabla, aes(x=Order, y=lim_inf),colour='#CC6633',linetype="dashed") +
+  geom_line(data=tabla, aes(x=Order, y=lim_sup),colour='#CC6633',linetype="dashed")
+  ggtitle("Numero de muertes explicado por la LogDosis")
+
+
+#estimaciones vs reales
+tab_est<-data.frame(bioassay$No.Muertes,out.yf[,1])
+colnames(tab_est)<- c("Reales", "Estimados")
+p2 <-ggplot(tab_est, aes(Reales,Estimados)) + geom_point(size=3)
+p2 + geom_abline(intercept=0,slope=1,colour='#CC6633') +
+  ggtitle("Comparativo de ajuste del modelo")
+
+```
+
